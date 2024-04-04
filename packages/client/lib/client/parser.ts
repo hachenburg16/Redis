@@ -1,4 +1,4 @@
-import { RedisArgument, RespVersions } from "../..";
+import { RedisArgument, RespVersions } from "../RESP/types";
 import { RedisVariadicArgument } from "../commands/generic-transformers";
 
 export interface CommandParser {
@@ -8,9 +8,10 @@ export interface CommandParser {
   respVersion: RespVersions;
   preserve: unknown;
   cachable: boolean;
-  
+
   push: (arg: RedisArgument) => unknown;
   pushVariadic: (vals: RedisVariadicArgument) => unknown;
+  pushVariadicWithLength: (vals: RedisVariadicArgument) => unknown;
   pushVariadicNumber: (vals: number | Array<number>) => unknown;
   pushKey: (key: RedisArgument) => unknown; // normal push of keys
   pushKeys: (keys: RedisVariadicArgument) => unknown; // push multiple keys at a time
@@ -66,6 +67,15 @@ export class BasicCommandParser implements CommandParser {
     } else {
       this.push(vals);
     }
+  }
+
+  pushVariadicWithLength(vals: RedisVariadicArgument) {
+    if (Array.isArray(vals)) {
+      this.#redisArgs.push(vals.length.toString());
+    } else {
+      this.#redisArgs.push('1');
+    }
+    this.pushVariadic(vals);
   }
 
   pushVariadicNumber(vals: number | number[]) {
